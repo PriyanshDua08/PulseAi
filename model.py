@@ -148,12 +148,12 @@ with st.sidebar:
                            ['Overview', 'Diagnostic', 'Developer'],
                            icons=['grid-3x3-gap', 'activity', 'code-slash'],
                            menu_icon="cast", default_index=0,
-                           styles={{
-                               "container": {{"padding": "0!important", "background-color": "transparent"}},
-                               "icon": {{"color": "#e63946", "font-size": "18px"}}, 
-                               "nav-link": {{"font-size": "14px", "text-align": "left", "margin":"0px", "--hover-color": "#2d3436"}},
-                               "nav-link-selected": {{"background-color": "#2d3436"}},
-                           }})
+                           styles={
+                               "container": {"padding": "0!important", "background-color": "transparent"},
+                               "icon": {"color": "#e63946", "font-size": "18px"}, 
+                               "nav-link": {"font-size": "14px", "text-align": "left", "margin":"0px", "--hover-color": "#2d3436"},
+                               "nav-link-selected": {"background-color": "#2d3436"},
+                           })
 
 # --- PAGE ROUTING ---
 if selected == 'Overview':
@@ -216,22 +216,62 @@ elif selected == 'Diagnostic':
             # Scale data
             input_scaled = scaler.transform(input_data)
             pred = lr.predict(input_scaled)
+            prob = lr.predict_proba(input_scaled)[0][1]
+            risk_pct = round(prob * 100, 1)
+
+            # --- INSIGHT ENGINE ---
+            flags = []
+            if resting_bp > 140: flags.append(("Hypertension Stage 2", "High blood pressure detected. Reduce sodium (<2.3g/day) and follow the DASH diet."))
+            if serum_cholestoral > 240: flags.append(("Hyperlipidemia", "Elevated cholesterol levels. Increase soluble fiber and reduce saturated fats."))
+            if fasting_sugar > 120: flags.append(("Glycemic Risk", "Blood sugar levels are elevated. Monitor glucose and prefer low-glycemic foods."))
+            if thalach < 100: flags.append(("Cardiac Response", "Low peak heart rate during exercise. Focus on graded cardiovascular conditioning."))
+            if oldpeak > 1.5: flags.append(("ST Depression", "Significant ischemic indicator detected. Urgent medical stress evaluation required."))
+            if Chest_Pain > 2: flags.append(("Angina Patterns", "Non-typical chest pain reported. Avoid heavy physical exertion until cleared."))
 
             st.markdown("<br>", unsafe_allow_html=True)
+            
+            # MAIN RESULT
             if pred[0] == 0:
                 st.markdown(f"""
                 <div style="padding:1.5rem; border:1px solid #22c55e; background:rgba(34, 197, 94, 0.1);">
                     <h3 style="color:#22c55e !important; margin:0;">NEGATIVE PROBABILITY</h3>
-                    <p>Analysis indicates no significant heart disease biomarkers present. Model Confidence: {accuracy}%</p>
+                    <p>Analysis indicates a <strong>{risk_pct}%</strong> likelihood of heart disease markers. Model Confidence: {accuracy}%</p>
+                    <div style="width:100%; background:#2d3436; height:4px; margin-top:10px;">
+                        <div style="width:{risk_pct}%; background:#22c55e; height:100%;"></div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
                 <div style="padding:1.5rem; border:1px solid #e63946; background:rgba(230, 57, 70, 0.1);">
                     <h3 style="color:#e63946 !important; margin:0;">POSITIVE RISK DETECTED</h3>
-                    <p>Clinical biomarkers match heart disease risk patterns. Urgent medical review recommended.</p>
+                    <p>Clinical biomarkers indicate a <strong>{risk_pct}%</strong> probability of heart disease risk. Urgent medical review recommended.</p>
+                    <div style="width:100%; background:#2d3436; height:4px; margin-top:10px;">
+                        <div style="width:{risk_pct}%; background:#e63946; height:100%;"></div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+            # DIAGNOSTIC DEEP-DIVE
+            if flags:
+                st.markdown("<br>### Diagnostic Deep-Dive", unsafe_allow_html=True)
+                col_i1, col_i2 = st.columns(2)
+                
+                with col_i1:
+                    st.markdown("#### Blocked/Flagged Markers")
+                    for title, _ in flags:
+                        st.markdown(f"""
+                        <div style="padding:0.5rem; margin-bottom:5px; border-left:3px solid #e63946; background:rgba(255,255,255,0.02);">
+                            <span style="color:#e63946; font-weight:600;">{title.upper()}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                with col_i2:
+                    st.markdown("#### Actionable Recommendations")
+                    for _, rec in flags:
+                        st.markdown(f"- {rec}")
+            else:
+                st.markdown("<br><p style='color:#94a3b8;'>No critical clinical flags detected in submitted biomarkers.</p>", unsafe_allow_html=True)
 
 elif selected == 'Developer':
     st.markdown("<h1>Developer Metadata</h1>", unsafe_allow_html=True)
