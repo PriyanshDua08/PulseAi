@@ -3,3 +3,5 @@ pandas
 scikit-learn
 streamlit
 streamlit-option-menu
+plotly
+fpdf2
