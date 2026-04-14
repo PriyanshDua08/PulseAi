@@ -6,22 +6,17 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import base64
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+import joblib
+import json
 from streamlit_option_menu import option_menu
 
-# --- DATA PREPARATION ---
-# Load data and use values to suppress feature name warnings from scikit-learn
-df = pd.read_csv('heartdisease.csv')
-X = df.drop(columns='target').values
-Y = df['target'].values
+# --- MODEL LOADING ---
+scaler = joblib.load('scaler.joblib')
+lr = joblib.load('model.joblib')
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, stratify=Y, random_state=2)
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-lr = LogisticRegression(max_iter=1000)
-lr.fit(X_train, Y_train)
+with open('metrics.json', 'r') as f:
+    metrics = json.load(f)
+accuracy_str = f"{metrics.get('accuracy', 'N/A')}%"
 
 # --- UTILS ---
 def generate_pdf_report(patient_data, probability, insights):
@@ -131,7 +126,7 @@ if selected == 'Overview':
     with col2:
         st.markdown("### Clinical Standards")
         st.info("PulseAI aligns with ACC/AHA guidelines for hypertension (Threshold: 130/80) and Hyperlipidemia (Threshold: 200 mg/dL).")
-        st.warning("Logistic Regression Accuracy: 85.2% | Clinical Grade Diagnostics enabled.")
+        st.warning(f"Logistic Regression Accuracy: {accuracy_str} | Clinical Grade Diagnostics enabled.")
 
 elif selected == 'Diagnostic':
     st.markdown("<h1>Clinical Intake Form</h1>", unsafe_allow_html=True)
