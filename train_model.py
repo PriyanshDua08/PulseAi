@@ -16,8 +16,8 @@ def train():
     
     X = df.drop(columns='target').values
     
-    # CRITICAL FIX: The dataset has target inverted (1=Healthy, 0=Disease). 
-    # We invert it back so 1=Disease, 0=Healthy to match PulseAI UI logic.
+    # To fix: The dataset has target inverted (1=Healthy, 0=Disease). 
+    # We invert it back so 1=Disease, 0=Healthy 
     Y = 1 - df['target'].values
     
     # Split data
